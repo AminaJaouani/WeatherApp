@@ -1,5 +1,8 @@
-const request = require('request')
 const yargs = require("yargs");
+
+const weather = require("./weather/weather")
+
+const geocode = require('./geocode/geocode')
 
 const argv = yargs
     .options({
@@ -20,26 +23,18 @@ const argv = yargs
     .alias('help', 'h')
     .argv;
 
-var encodedAdress = encodeURIComponent(argv.a)
-var encodedCity = encodeURIComponent(argv.c)
-
-
-request({
-    url: `https://nominatim.openstreetmap.org/search?street=${encodedAdress}&city=${encodedCity}&format=json`,
-    headers: {
-        "User-Agent": "my-weather-app/1.0 (aminajaouani@icloud.com)"
-    },
-    json: true
-}, (error, response, body) => {
-    if ( error) {
-        console.log("Unable to connect to server")
+geocode.geocodeAddress(argv.a,argv.c, (errorMessage, result) => {
+    if (errorMessage){
+        console.log(errorMessage)
     }
-    else if(!body[0]){
-        console.log("Unable to find that address")
+    else {
+        weather.getWeather(result.latitude, result.longitude, (errorMessage, weatherResult) => {
+            if (errorMessage){
+                console.log(errorMessage)
+            }
+            else {
+                console.log(`It's currently ${weatherResult.temperature}°C`)
+            }
+        })
     }
-    else if ( response.statusCode === 200) {
-        console.log(`latitude ${body[0].lat}`);
-        console.log(`longitude ${body[0].lon}`);   
-    }
-     
 })
